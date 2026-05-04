@@ -1,0 +1,327 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>WorldMind V2 Plugin Inventory</title>
+  <style>
+    :root {
+      --bg:#0b0a08; --panel:rgba(28,25,19,.9); --panel2:rgba(0,0,0,.24);
+      --text:#f8efd9; --muted:#cdbd9f; --soft:#9f8e72; --line:rgba(224,185,105,.24);
+      --gold:#d7b46a; --gold2:#f0d38c; --code:rgba(0,0,0,.32);
+      --shadow:rgba(0,0,0,.42); --radius:20px;
+      --mono:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono","Courier New",monospace;
+      --sans:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+    }
+    *{box-sizing:border-box}
+    html{scroll-behavior:smooth;background:var(--bg)}
+    body{margin:0;font-family:var(--sans);color:var(--text);line-height:1.55;background:
+      radial-gradient(circle at 8% 0%,rgba(215,180,106,.17),transparent 34rem),
+      radial-gradient(circle at 92% 16%,rgba(118,166,189,.10),transparent 28rem),
+      linear-gradient(135deg,#090806 0%,#18140e 42%,#0b0a08 100%);min-height:100vh}
+    body:before{content:"";position:fixed;inset:0;pointer-events:none;background-image:
+      linear-gradient(rgba(255,255,255,.025) 1px,transparent 1px),
+      linear-gradient(90deg,rgba(255,255,255,.018) 1px,transparent 1px);background-size:42px 42px;
+      mask-image:linear-gradient(to bottom,rgba(0,0,0,.65),transparent 80%)}
+    .shell{width:min(1240px,calc(100% - 32px));margin:0 auto;padding:34px 0 70px}
+    .hero{border:1px solid var(--line);background:linear-gradient(145deg,rgba(38,34,26,.98),rgba(13,12,9,.94));
+      border-radius:30px;padding:clamp(24px,4vw,40px);box-shadow:0 26px 90px var(--shadow);position:relative;overflow:hidden}
+    .hero:after{content:"WM";position:absolute;right:-18px;bottom:-54px;font-size:12rem;font-weight:950;letter-spacing:-.12em;color:rgba(215,180,106,.055);line-height:1}
+    .topline{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;position:relative;z-index:1}
+    .kicker{letter-spacing:.18em;text-transform:uppercase;color:var(--gold);font-size:.78rem;font-weight:900}
+    .pill,.badge{border:1px solid var(--line);background:rgba(0,0,0,.24);color:var(--gold2);border-radius:999px;padding:7px 11px;font-family:var(--mono);font-size:.78rem}
+    h1{margin:12px 0 10px;font-size:clamp(2.2rem,6vw,5rem);line-height:.92;letter-spacing:-.06em;max-width:900px;position:relative;z-index:1}
+    .subtitle{color:var(--muted);max-width:830px;margin:0;font-size:1.05rem;position:relative;z-index:1}
+    .meta-grid{margin-top:28px;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:12px;position:relative;z-index:1}
+    .metric{border:1px solid var(--line);background:rgba(0,0,0,.20);border-radius:18px;padding:14px 16px;min-height:82px}
+    .metric b{display:block;font-size:1.55rem;color:var(--gold2);line-height:1}.metric span{display:block;margin-top:6px;color:var(--soft);font-size:.82rem}
+    .toolbar-wrap{position:sticky;top:0;z-index:20;padding:16px 0 14px;backdrop-filter:blur(14px)}
+    .toolbar{display:grid;grid-template-columns:minmax(240px,1fr) auto;gap:12px;align-items:center;border:1px solid rgba(224,185,105,.12);background:rgba(12,11,9,.78);border-radius:24px;padding:12px;box-shadow:0 14px 50px rgba(0,0,0,.22)}
+    .search{display:flex;align-items:center;gap:10px;border:1px solid var(--line);background:rgba(0,0,0,.26);border-radius:999px;padding:11px 15px;min-width:0}
+    .search span{color:var(--gold);font-size:.84rem;font-weight:800;text-transform:uppercase;letter-spacing:.08em}.search input{width:100%;border:0;outline:0;background:transparent;color:var(--text);font:inherit;min-width:0}
+    .actions,.filters,.plugin-tools{display:flex;gap:8px;flex-wrap:wrap}.actions{justify-content:flex-end}
+    button{cursor:pointer;border:1px solid var(--line);background:rgba(215,180,106,.11);color:var(--gold2);border-radius:999px;padding:10px 14px;font-weight:800;font-size:.86rem;font-family:inherit}
+    button:hover,button.active{background:rgba(215,180,106,.22);color:#fff3d1}.filters{margin:0 0 18px}
+    .layout{display:grid;grid-template-columns:280px minmax(0,1fr);gap:18px;align-items:start}
+    aside{position:sticky;top:104px;border:1px solid var(--line);border-radius:var(--radius);background:rgba(0,0,0,.20);overflow:hidden}
+    aside h2{margin:0;padding:15px 16px;font-size:.9rem;color:var(--gold2);text-transform:uppercase;letter-spacing:.12em;border-bottom:1px solid var(--line)}
+    .toc-list{margin:0;padding:10px;list-style:none;max-height:calc(100vh - 190px);overflow:auto}
+    .toc-list a{display:flex;justify-content:space-between;gap:10px;text-decoration:none;color:var(--muted);border-radius:12px;padding:8px 9px;font-size:.88rem}
+    .toc-list a:hover{background:rgba(215,180,106,.10);color:var(--gold2)}.toc-list small{color:var(--soft);font-family:var(--mono)}
+    .section-title{margin:0 0 14px;display:flex;align-items:end;justify-content:space-between;gap:14px}.section-title h2{margin:0;font-size:1.55rem;letter-spacing:-.02em}.section-title span{color:var(--soft);font-size:.9rem}
+    .plugin-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+    article.plugin{border:1px solid var(--line);border-radius:var(--radius);background:var(--panel);box-shadow:0 16px 52px rgba(0,0,0,.22);overflow:hidden;min-width:0}
+    article.plugin[hidden]{display:none}details{height:100%}summary{list-style:none;cursor:pointer;padding:17px 17px 15px;background:linear-gradient(180deg,rgba(215,180,106,.10),rgba(0,0,0,0));border-bottom:1px solid var(--line)}summary::-webkit-details-marker{display:none}
+    .plugin-name{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:9px}.plugin-name h3{margin:0;font-size:1.1rem;letter-spacing:-.02em;color:#fff4d8;overflow-wrap:anywhere}
+    .badges{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}.badge{white-space:nowrap;font-size:.69rem;padding:4px 8px}.badge.category{color:#d8ecf4;border-color:rgba(118,166,189,.35);background:rgba(118,166,189,.10)}
+    .desc{margin:0;color:var(--muted);font-size:.91rem}.plugin-body{padding:15px 17px 17px}.mini-title{margin:0 0 8px;color:var(--gold);text-transform:uppercase;letter-spacing:.12em;font-size:.72rem;font-weight:900}
+    .code-list{display:flex;flex-wrap:wrap;gap:7px;margin:0 0 16px}code{display:inline-block;font-family:var(--mono);font-size:.78rem;color:#fff1c8;background:var(--code);border:1px solid rgba(215,180,106,.18);border-radius:999px;padding:5px 8px;overflow-wrap:anywhere;max-width:100%}
+    .empty{border:1px dashed var(--line);border-radius:var(--radius);color:var(--muted);padding:28px;text-align:center;background:rgba(0,0,0,.15)}
+    .note{margin-top:24px;border-left:4px solid var(--gold);background:rgba(215,180,106,.08);padding:14px 16px;color:var(--muted);border-radius:0 14px 14px 0}
+    footer{margin-top:48px;color:var(--soft);text-align:center;font-size:.86rem}.toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%) translateY(20px);opacity:0;pointer-events:none;border:1px solid var(--line);background:rgba(12,11,9,.94);color:var(--gold2);border-radius:999px;padding:10px 14px;box-shadow:0 10px 40px rgba(0,0,0,.32);transition:180ms ease;z-index:50}.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+    @media(max-width:1080px){.layout{grid-template-columns:1fr}aside{position:static}.toc-list{max-height:260px}}@media(max-width:820px){.meta-grid,.plugin-grid{grid-template-columns:1fr}.toolbar{grid-template-columns:1fr}.actions{justify-content:flex-start}.hero{border-radius:24px}}
+    @media print{body{background:#fff;color:#17140f}.toolbar-wrap,aside,.filters,.plugin-tools,.toast,body:before{display:none!important}.shell{width:100%;padding:0}.layout{display:block}.plugin-grid{display:block}article.plugin{break-inside:avoid;margin-bottom:12px;box-shadow:none}}
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <header class="hero">
+      <div class="topline"><div class="kicker">Deviated Systems · Rust Oxide/uMod</div><div class="pill">WorldMind V2 · Inventory Dashboard</div></div>
+      <h1>WorldMind V2 Plugin Inventory</h1>
+      <p class="subtitle">Standalone browser reference for the WorldMind V2 plugin suite. Search commands, permissions, categories, and plugin responsibilities from one local HTML file.</p>
+      <div class="meta-grid">
+        <div class="metric"><b id="metricPlugins">0</b><span>plugins tracked</span></div>
+        <div class="metric"><b id="metricCommands">0</b><span>commands indexed</span></div>
+        <div class="metric"><b id="metricPerms">0</b><span>permissions indexed</span></div>
+        <div class="metric"><b id="metricCategories">0</b><span>categories</span></div>
+        <div class="metric"><b>DV8D</b><span>Devi8d0ne authored</span></div>
+      </div>
+    </header>
+    <div class="toolbar-wrap"><div class="toolbar"><label class="search"><span>Search</span><input id="search" type="search" placeholder="plugin, command, permission, category..." /></label><div class="actions"><button type="button" id="expandAll">Expand all</button><button type="button" id="collapseAll">Collapse all</button><button type="button" id="copyVisible">Copy visible</button><button type="button" onclick="window.print()">Print / PDF</button></div></div></div>
+    <div class="filters" id="filters"></div>
+    <div class="layout"><aside><h2>Plugin Index</h2><ul class="toc-list" id="toc"></ul></aside><section><div class="section-title"><h2>Plugin Reference</h2><span id="resultCount">0 shown</span></div><section class="plugin-grid" id="plugins"></section><div class="empty" id="empty" hidden>No matching plugins found.</div></section></div>
+    <div class="note">Permission grants generally follow: <code>oxide.grant user &lt;steamid&gt; permission.name</code> or <code>oxide.grant group admin permission.name</code>.</div>
+    <footer>Made with love by Deviated Systems · Author: Devi8d0ne · Generated for WorldMind V2</footer>
+  </main>
+  <div class="toast" id="toast">Copied</div>
+  <script>
+const plugins = [
+      {
+        name: "WorldMindV2",
+        version: "core",
+        desc: "Core WorldMind V2 intelligence layer. Handles model access, memory hooks, providers, and shared APIs.",
+        commands: ["/worldmind status", "/worldmind reload", "/worldmind ask <question>", "worldmind.status", "worldmind.reload"],
+        perms: ["worldmindv2.admin"]
+      },
+      {
+        name: "WorldMindAsk",
+        version: "ask",
+        desc: "Player-facing /ask bridge into WorldMindV2. Keeps answers generic unless configured.",
+        commands: ["/ask <question>", "/ask help", "/ask status", "/ask reload", "worldmindask.status", "worldmindask.reload"],
+        perms: ["worldmindask.use", "worldmindask.admin"]
+      },
+      {
+        name: "WorldMindAdminMind",
+        version: "admin",
+        desc: "Admin-only reports, activity review, player review, and admin intelligence layer.",
+        commands: ["/wmadmin status", "/wmadmin summary", "/wmadmin ask <question>", "/wmadmin reports", "/wmadmin report <target> <message>", "/wmadmin close <reportId> [note]", "/wmadmin player <steamId/name>", "/wmadmin activity [count]", "/wmadmin plugins", "/wmadmin reload", "/wmadmin save", "/wmadmin clear", "worldmindadmin.status", "worldmindadmin.summary", "worldmindadmin.reload"],
+        perms: ["worldmindadminmind.admin"]
+      },
+      {
+        name: "WorldMindDiscordMind",
+        version: "discord",
+        desc: "Generic Discord webhook bridge for WorldMind events, summaries, and queued sends.",
+        commands: ["/wmdiscord status", "/wmdiscord test", "/wmdiscord send <message>", "/wmdiscord summary <notes>", "/wmdiscord queue", "/wmdiscord reload", "/wmdiscord clear", "worldminddiscord.status", "worldminddiscord.test", "worldminddiscord.reload"],
+        perms: ["worldminddiscordmind.admin", "worldminddiscordmind.use"]
+      },
+      {
+        name: "WorldMindPlayerBrain",
+        version: "players",
+        desc: "Player behavior memory/profile layer for WorldMindV2. Tracks sessions, deaths, kills, gathering, crafting, and tags.",
+        commands: ["/wmplayer", "/wmplayer profile [steamId]", "/wmplayer ask <question>", "/wmplayer status", "/wmplayer reload", "/wmplayer save", "/wmplayer clear <steamId>", "worldmindplayerbrain.status", "worldmindplayerbrain.save"],
+        perms: ["worldmindplayerbrain.admin", "worldmindplayerbrain.use"]
+      },
+      {
+        name: "WorldMindNPCBrain",
+        version: "npc",
+        desc: "Lets Rust NPCs/scientists react with short AI-generated chatter.",
+        commands: ["/wnpc status", "/wnpc reload", "/wnpc test", "/wnpc clear", "worldmindnpcbrain.status", "worldmindnpcbrain.reload"],
+        perms: ["worldmindnpcbrain.admin", "worldmindnpcbrain.use"]
+      },
+      {
+        name: "WorldMindShopBrain",
+        version: "shop",
+        desc: "Generic shop/economy tracking and reporting layer.",
+        commands: ["/wmshop status", "/wmshop summary", "/wmshop ask", "/wmshop top", "/wmshop record <buy/sell/earn/spend> <item/currency> <amount> [value]", "/wmshop player <steamId>", "/wmshop reload", "/wmshop save", "/wmshop reset", "worldmindshop.status", "worldmindshop.summary", "worldmindshop.reload"],
+        perms: ["worldmindshopbrain.admin", "worldmindshopbrain.use"]
+      },
+      {
+        name: "WorldMindItemBrain",
+        version: "items",
+        desc: "Shared item lookup, category, and value-score context layer.",
+        commands: ["/wmitem status", "/wmitem lookup <shortname/display>", "/wmitem score <shortname>", "/wmitem inventory", "/wmitem reload", "/wmitem rebuild", "worldminditem.status", "worldminditem.reload"],
+        perms: ["worldminditembrain.admin", "worldminditembrain.use"]
+      },
+      {
+        name: "WorldMindLootMind",
+        version: "loot",
+        desc: "Turns player inventory/loot context into short loot advice.",
+        commands: ["/lootmind", "/wmloot", "/wmloot reload", "/wmloot test"],
+        perms: ["worldmindlootmind.admin", "worldmindlootmind.use"]
+      },
+      {
+        name: "WorldMindEventBrain",
+        version: "events",
+        desc: "AI-flavored server event announcements, updates, recaps, and active event tracking.",
+        commands: ["/wmevent status", "/wmevent start <title> [minutes]", "/wmevent announce <message>", "/wmevent update <eventId> <text>", "/wmevent recap <eventId/notes>", "/wmevent list", "/wmevent stop <eventId>", "/wmevent clear", "/wmevent reload", "/wmevent test", "wmevent"],
+        perms: ["worldmindeventbrain.admin", "worldmindeventbrain.use"]
+      },
+      {
+        name: "WorldMindDeathRecap",
+        version: "death",
+        desc: "AI-powered death recap system for player deaths. Generic by default.",
+        commands: ["/wmdeath", "/wmdeath status", "/wmdeath reload", "/wmdeath test", "worldminddeathrecap.status", "worldminddeathrecap.reload"],
+        perms: ["worldminddeathrecap.admin", "worldminddeathrecap.use"]
+      },
+      {
+        name: "WorldMindBroadcastBrain",
+        version: "broadcast",
+        desc: "Controlled global/local broadcast and narration layer.",
+        commands: ["/wmbroadcast status", "/wmbroadcast say <message>", "/wmbroadcast ask <notes>", "/wmbroadcast local <radius> <message>", "/wmbroadcast preset <key>", "/wmbroadcast presets", "/wmbroadcast history [count]", "/wmbroadcast reload", "/wmbroadcast save", "/wmbroadcast clear", "worldmindbroadcast.status", "worldmindbroadcast.say <message>", "worldmindbroadcast.reload"],
+        perms: ["worldmindbroadcastbrain.admin", "worldmindbroadcastbrain.use"]
+      },
+      {
+        name: "WorldMindMapBrainV2",
+        version: "map-v2",
+        desc: "Tactical native-map intelligence layer with private map notes, rail UI, intel cards, heat memory, watch pins, NPC layers, and admin/player permission tiers.",
+        commands: ["/wmmap whereami", "/wmmap where", "/wmmap loc", "/wmmap describe", "/wmmap status", "/wmmap reload", "/wmmap test", "worldmindmap.status", "worldmindmap.reload"],
+        perms: ["worldmindmapbrain.admin", "worldmindmapbrain.use"]
+      },
+      {
+        name: "WorldMindMonumentBrain",
+        version: "monuments",
+        desc: "Monument atmosphere, entry warnings, and monument activity context.",
+        commands: ["/wmmonument status", "/wmmonument where", "/wmmonument list", "/wmmonument add <id> <display name> <radius>", "/wmmonument remove <id>", "/wmmonument describe <id>", "/wmmonument recap <id>", "/wmmonument reload", "/wmmonument save", "/wmmonument clearactivity", "worldmindmonument.status", "worldmindmonument.reload"],
+        perms: ["worldmindmonumentbrain.admin", "worldmindmonumentbrain.use"]
+      },
+      {
+        name: "WorldMindProviderBrain",
+        version: "providers",
+        desc: "Optional external provider health, cache, and lookup bridge.",
+        commands: ["/wmprovider status", "/wmprovider health", "/wmprovider check", "/wmprovider cache", "/wmprovider clearcache", "/wmprovider item <shortname>", "/wmprovider rusttools <path>", "/wmprovider rustitemapi <path>", "/wmprovider rustio <path>", "/wmprovider reload", "/wmprovider save", "worldmindprovider.status", "worldmindprovider.health", "worldmindprovider.check", "worldmindprovider.reload"],
+        perms: ["worldmindproviderbrain.admin", "worldmindproviderbrain.use"]
+      },
+      {
+        name: "WorldMindUIV2",
+        version: "ui",
+        desc: "Shared owner/admin CUI shell for the WorldMind plugin ecosystem.",
+        commands: ["/wmui [page]", "worldmindui.open [page]", "worldmindui.close", "worldmindui.page <page>", "worldmindui.refresh", "worldmindui.theme <forest/desert/snow/wasteland>", "worldmindui.status", "worldmindui.reload"],
+        perms: ["worldminduiv2.admin"]
+      },
+      {
+        name: "WorldMindMemoryAudit",
+        version: "audit",
+        desc: "Admin-only memory, facts, timeline, and context audit helper.",
+        commands: ["/wmaudit status", "/wmaudit plugins", "/wmaudit facts", "/wmaudit fact <key>", "/wmaudit setfact <key> <value>", "/wmaudit forgetfact <key>", "/wmaudit player <steamId/name>", "/wmaudit context <steamId/name>", "/wmaudit events [count]", "/wmaudit providers", "/wmaudit ask <question>", "/wmaudit save", "/wmaudit reload", "worldmindaudit.status", "worldmindaudit.reload"],
+        perms: ["worldmindmemoryaudit.admin"]
+      },
+      {
+        name: "WorldMindThreatSense",
+        version: "threat",
+        desc: "Converts real threat/damage events into short tactical player warnings.",
+        commands: ["/wmthreat", "/wmthreat reload", "/wmthreat test"],
+        perms: ["worldmindthreatsense.admin", "worldmindthreatsense.use"]
+      },
+      {
+        name: "WorldMindQuestBrain",
+        version: "quests",
+        desc: "Generic objective/mission layer for WorldMind. Tracks gathering, crafting, kills, and assigned objectives.",
+        commands: ["/quest", "/quest list", "/quest abandon <objectiveId>", "/quest info <objectiveId>", "/quest ask [question]", "/wmquest status", "/wmquest templates", "/wmquest active", "/wmquest create <title>", "/wmquest assign <player> <template/objective>", "/wmquest complete <player> <objectiveId>", "/wmquest generate <player> <notes>", "/wmquest recap <player>", "/wmquest reload", "/wmquest save", "/wmquest clear", "worldmindquest.status", "worldmindquest.reload"],
+        perms: ["worldmindquestbrain.admin", "worldmindquestbrain.use"]
+      },
+      {
+        name: "WorldMindReputationBrain",
+        version: "rep",
+        desc: "Player reputation, title, and behavior identity layer.",
+        commands: ["/rep", "/rep profile", "/rep ask [question]", "/wmrep status", "/wmrep profile <player>", "/wmrep eval <player>", "/wmrep evalall", "/wmrep addtag <player> <tag>", "/wmrep removetag <player> <tag>", "/wmrep title <player> <title>", "/wmrep signal <player> <type> <amount> [notes]", "/wmrep top", "/wmrep ask <player> <question>", "/wmrep reload", "/wmrep save", "/wmrep clear <steamId>", "worldmindrep.status", "worldmindrep.reload"],
+        perms: ["worldmindreputationbrain.admin", "worldmindreputationbrain.use"]
+      },
+      {
+        name: "WorldMindRaidBrain",
+        version: "raid",
+        desc: "Raid detection, raid zone grouping, nearby warnings, and AI raid summaries.",
+        commands: ["/wmraid status", "/wmraid zones", "/wmraid reload", "/wmraid clear", "/wmraid test"],
+        perms: ["worldmindraidbrain.admin", "worldmindraidbrain.use"]
+      },
+      {
+        name: "WorldMindRoadPatrolsV2",
+        version: "2.1.0",
+        desc: "Living Roads plugin: roaming NPC squads, route heat, scanner, reinforcements, wanted levels, bosses, and heavy response.",
+        commands: ["/wmrp start", "/wmrp stop", "/wmrp status", "/wmrp cleanup", "/wmrp nearest", "/wmrp spawn random/checkpoint/courier/scientist/bandit/hunter/ambush/roadblock/boss/heavy", "/wmrp event random/courier/ambush/roadblock/boss/heavy", "/wmrp boss", "/wmrp wanted ...", "/wmrp heat ...", "/wmrp route start/add/finish/cancel/list/delete/show/enable/disable/sample", "/wmrp debug routes/squads/ai", "/reinforce squad/medic/overwatch/emergency/cancel", "/patrols"],
+        perms: ["worldmindroadpatrolsv2.admin", "worldmindroadpatrolsv2.reinforce", "worldmindroadpatrolsv2.scanner.basic", "worldmindroadpatrolsv2.scanner.advanced", "worldmindroadpatrolsv2.scanner.admin"]
+      }
+    ];
+
+    const pluginsEl = document.getElementById('plugins');
+    const tocEl = document.getElementById('toc');
+    const searchEl = document.getElementById('search');
+    const filtersEl = document.getElementById('filters');
+    const emptyEl = document.getElementById('empty');
+    const resultCountEl = document.getElementById('resultCount');
+    const toastEl = document.getElementById('toast');
+    let currentCategory = 'all';
+
+    function inferCategory(plugin) {
+      const n = plugin.name.toLowerCase();
+      const v = String(plugin.version || '').toLowerCase();
+      if (n.includes('discord') || n.includes('broadcast') || n.includes('event')) return 'Comms';
+      if (n.includes('map') || n.includes('monument') || n.includes('provider')) return 'World';
+      if (n.includes('player') || n.includes('reputation') || n.includes('quest') || n.includes('death') || n.includes('threat')) return 'Player';
+      if (n.includes('admin') || n.includes('audit') || n.includes('ui')) return 'Admin';
+      if (n.includes('item') || n.includes('loot') || n.includes('shop')) return 'Economy';
+      if (n.includes('npc') || n.includes('road') || n.includes('raid')) return 'PvE/PvP';
+      if (n.includes('core') || v.includes('core') || n === 'worldmindv2') return 'Core';
+      return 'Utility';
+    }
+
+    plugins.forEach(plugin => plugin.category = plugin.category || inferCategory(plugin));
+
+    function slugify(value) { return value.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, ''); }
+    function escapeHtml(value) { return String(value).replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;').replaceAll("'","&#039;"); }
+    function codeList(values) { return (!values || values.length === 0) ? '<code>none found</code>' : values.map(v => `<code>${escapeHtml(v)}</code>`).join(''); }
+    function copyText(text) { navigator.clipboard.writeText(text).then(() => showToast('Copied')); }
+    function showToast(text) { toastEl.textContent = text; toastEl.classList.add('show'); setTimeout(() => toastEl.classList.remove('show'), 1200); }
+    function pluginText(plugin) { return [plugin.name + ' [' + plugin.version + ']', plugin.desc, 'Commands:', ...(plugin.commands || []), 'Permissions:', ...(plugin.perms || [])].join('\n'); }
+
+    function renderFilters() {
+      const categories = ['all', ...Array.from(new Set(plugins.map(p => p.category))).sort()];
+      filtersEl.innerHTML = categories.map(cat => `<button type="button" data-category="${escapeHtml(cat)}" class="${cat === currentCategory ? 'active' : ''}">${escapeHtml(cat === 'all' ? 'All' : cat)}</button>`).join('');
+      filtersEl.querySelectorAll('button').forEach(btn => btn.addEventListener('click', () => { currentCategory = btn.dataset.category; renderFilters(); filter(); }));
+    }
+
+    function render() {
+      pluginsEl.innerHTML = plugins.map((plugin, index) => {
+        const id = slugify(plugin.name);
+        const open = index < 4 ? 'open' : '';
+        const search = [plugin.name, plugin.version, plugin.category, plugin.desc, ...plugin.commands, ...plugin.perms].join(' ').toLowerCase();
+        return `<article class="plugin" id="${id}" data-category="${escapeHtml(plugin.category)}" data-search="${escapeHtml(search)}"><details ${open}><summary><div class="plugin-name"><h3>${escapeHtml(plugin.name)}</h3><div class="badges"><span class="badge category">${escapeHtml(plugin.category)}</span><span class="badge">${escapeHtml(plugin.version)}</span></div></div><p class="desc">${escapeHtml(plugin.desc)}</p></summary><div class="plugin-body"><div class="plugin-tools"><button type="button" data-copy-plugin="${index}">Copy plugin</button><button type="button" data-copy-commands="${index}">Copy commands</button><button type="button" data-copy-perms="${index}">Copy perms</button></div><p class="mini-title">Commands · ${(plugin.commands || []).length}</p><div class="code-list">${codeList(plugin.commands)}</div><p class="mini-title">Permissions · ${(plugin.perms || []).length}</p><div class="code-list">${codeList(plugin.perms)}</div></div></details></article>`;
+      }).join('');
+
+      tocEl.innerHTML = plugins.map(plugin => `<li><a href="#${slugify(plugin.name)}"><span>${escapeHtml(plugin.name)}</span><small>${escapeHtml(plugin.category)}</small></a></li>`).join('');
+      document.querySelectorAll('[data-copy-plugin]').forEach(btn => btn.addEventListener('click', () => copyText(pluginText(plugins[Number(btn.dataset.copyPlugin)]))));
+      document.querySelectorAll('[data-copy-commands]').forEach(btn => btn.addEventListener('click', () => copyText((plugins[Number(btn.dataset.copyCommands)].commands || []).join('\n'))));
+      document.querySelectorAll('[data-copy-perms]').forEach(btn => btn.addEventListener('click', () => copyText((plugins[Number(btn.dataset.copyPerms)].perms || []).join('\n'))));
+      updateMetrics();
+      filter();
+    }
+
+    function updateMetrics() {
+      document.getElementById('metricPlugins').textContent = plugins.length;
+      document.getElementById('metricCommands').textContent = plugins.reduce((n, p) => n + (p.commands || []).length, 0);
+      document.getElementById('metricPerms').textContent = plugins.reduce((n, p) => n + (p.perms || []).length, 0);
+      document.getElementById('metricCategories').textContent = new Set(plugins.map(p => p.category)).size;
+    }
+
+    function filter() {
+      const query = searchEl.value.trim().toLowerCase();
+      let shown = 0;
+      document.querySelectorAll('article.plugin').forEach(card => {
+        const match = (currentCategory === 'all' || card.dataset.category === currentCategory) && (!query || card.dataset.search.includes(query));
+        card.hidden = !match;
+        if (match) shown++;
+        if (match && query) card.querySelector('details').open = true;
+      });
+      resultCountEl.textContent = shown + ' shown';
+      emptyEl.hidden = shown !== 0;
+    }
+
+    document.getElementById('expandAll').addEventListener('click', () => document.querySelectorAll('details').forEach(d => d.open = true));
+    document.getElementById('collapseAll').addEventListener('click', () => document.querySelectorAll('details').forEach(d => d.open = false));
+    document.getElementById('copyVisible').addEventListener('click', () => copyText(Array.from(document.querySelectorAll('article.plugin:not([hidden]) h3')).map(x => x.textContent).join('\n')));
+    searchEl.addEventListener('input', filter);
+
+    renderFilters();
+    render();
+  </script>
+</body>
+</html>
